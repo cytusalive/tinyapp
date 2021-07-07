@@ -10,12 +10,17 @@ const urlDatabase = {
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+
 app.post("/urls", (req, res) => {
   const shortenedURL = generateRandomString();
   urlDatabase[shortenedURL] = req.body['longURL'];
   res.redirect(`/urls/${shortenedURL}`);
 });
 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls');
+});
 
 
 
