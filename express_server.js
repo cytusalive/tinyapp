@@ -11,18 +11,6 @@ const urlDatabase = {
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 
-app.post("/urls", (req, res) => {
-  const shortenedURL = generateRandomString();
-  urlDatabase[shortenedURL] = req.body['longURL'];
-  res.redirect(`/urls/${shortenedURL}`);
-});
-
-app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
-});
-
-
 
 function generateRandomString() {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
@@ -67,6 +55,21 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 
+app.post("/urls", (req, res) => {
+  const shortenedURL = generateRandomString();
+  urlDatabase[shortenedURL] = req.body['longURL'];
+  res.redirect(`/urls/${shortenedURL}`);
+});
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+  delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls');
+});
+
+app.post("/urls/:id", (req, res) => {
+  urlDatabase[req.params.id] = req.body.newURL;
+  res.redirect('/urls');
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
