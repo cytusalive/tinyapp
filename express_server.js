@@ -107,15 +107,32 @@ app.post("/logout", (req, res) => {
   res.redirect('/urls');
 });
 
-app.post("/register", (req, res) => {
-  const userID = generateRandomString();
-  users[userID] = {
-    id: userID,
-    email: req.body.email,
-    password: req.body.password
+const ifUserExists = function (email) {
+  for (const user in users) {
+    if (user.email === email) {
+      return true;
+    }
   }
-  res.cookie('user_id', userID)
-  res.redirect('/urls')
+  return false;
+}
+
+app.post("/register", (req, res) => {
+  if (ifUserExists(req.body.email)) {
+    res.send(400, "This email address is not available.");
+  } else if (!req.body.email) {
+    res.send(400, "Email address cannot be empty");
+  } else if (!req.body.password) {
+    res.send(400, "Password is invalid.")
+  } else {
+    const userID = generateRandomString();
+    users[userID] = {
+      id: userID,
+      email: req.body.email,
+      password: req.body.password
+    }  
+    res.cookie('user_id', userID)
+    res.redirect('/urls')
+  }
 });
 
 app.listen(PORT, () => {
