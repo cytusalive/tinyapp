@@ -2,7 +2,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const express = require("express");
 const bcrypt = require("bcrypt");
-const { getUserByEmail } = require("./helpers");
+const { getUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 
 const app = express();
 const PORT = 8080;
@@ -36,25 +36,6 @@ app.use(cookieSession({
 app.set("view engine", "ejs");
 
 
-function generateRandomString() {
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
-  let string = '';
-  const digits = 6;
-  for (let i = 0; i < digits; i++) {
-    string += chars[parseInt(chars.length * Math.random())];
-  }
-  return string;
-}
-
-function urlsForUser(id) {
-  const userURLs = {};
-  for (const URL in urlDatabase) {
-    if (urlDatabase[URL].userID === id) {
-      userURLs[URL] = urlDatabase[URL];
-    }
-  }
-  return userURLs;
-}
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -62,7 +43,7 @@ app.get("/", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const templateVars = {
-     urls: urlsForUser(req.session["user_id"]),
+     urls: urlsForUser(req.session["user_id"], urlDatabase),
      user: users[req.session["user_id"]] 
   };  
   res.render("urls_index", templateVars);
@@ -144,7 +125,7 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (req.session["user_id"]) {
     if (req.params.shortURL in urlDatabase) {
-      const userURLs = urlsForUser(req.session["user_id"]);
+      const userURLs = urlsForUser(req.session["user_id"], urlDatabase);
       if (req.params.shortURL in userURLs) {
         delete urlDatabase[req.params.shortURL];
         res.redirect('/urls');  
@@ -162,7 +143,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   if (req.session["user_id"]) {
     if (req.params.id in urlDatabase) {
-      const userURLs = urlsForUser(req.session["user_id"]);
+      const userURLs = urlsForUser(req.session["user_id"], urlDatabase);
       if (req.params.id in userURLs) {
         urlDatabase[req.params.id].longURL = req.body.newURL;
         res.redirect('/urls'); 
