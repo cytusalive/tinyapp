@@ -104,24 +104,33 @@ app.post("/urls/:id", (req, res) => {
   res.redirect('/urls');
 })
 
+const ifUserExists = function (email) {
+  for (const user in users) {
+    if (users[user]['email'] === email) {
+      return users[user];
+    }
+  }
+  return false;
+}
+
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect("/urls")
+  let user = ifUserExists(req.body.email); 
+  if (user) {
+    if (user.password === req.body.password) {  
+      res.cookie("user_id", user.id);
+      res.redirect('/urls');
+    } else {
+      res.send(403, "Invalid password.");
+    }
+  } else {
+    res.send(403, "Invalid email address")
+  }
 })
 
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
   res.redirect('/urls');
 });
-
-const ifUserExists = function (email) {
-  for (const user in users) {
-    if (user.email === email) {
-      return true;
-    }
-  }
-  return false;
-}
 
 app.post("/register", (req, res) => {
   if (ifUserExists(req.body.email)) {
