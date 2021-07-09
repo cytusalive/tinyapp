@@ -81,6 +81,13 @@ app.get("/register", (req, res) => {
   res.render("urls_registration", templateVars);
 })
 
+app.get("/login", (req, res) => {
+  let templateVars = {
+    user: users[req.cookies["user_id"]],
+  };
+  res.render("urls_login", templateVars);
+})
+
 app.post("/urls", (req, res) => {
   const shortenedURL = generateRandomString();
   urlDatabase[shortenedURL] = req.body['longURL'];
