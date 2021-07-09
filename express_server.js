@@ -1,6 +1,7 @@
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const express = require("express");
+const bcrypt = require("bcrypt");
 
 const app = express();
 const PORT = 8080;
@@ -20,10 +21,9 @@ const users = {
   "cytus": {
     id: "cytus", 
     email: "cytus@alive.com", 
-    password: "chocological"
+    password: "$2b$10$kSUsspaw/FDEsMUL0XpOPeJoAkW8qd5mIoyvY0yFOyGNfNNoGN3i."
   },
 }
-
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.set("view engine", "ejs");
@@ -182,7 +182,7 @@ const ifUserExists = function (email) {
 app.post("/login", (req, res) => {
   let user = ifUserExists(req.body.email); 
   if (user) {
-    if (user.password === req.body.password) {  
+    if (bcrypt.compareSync(req.body.password, user.password)) {  
       res.cookie("user_id", user.id);
       res.redirect('/urls');
     } else {
@@ -210,7 +210,7 @@ app.post("/register", (req, res) => {
     users[userID] = {
       id: userID,
       email: req.body.email,
-      password: req.body.password
+      password: bcrypt.hashSync(req.body.password, 10)
     }  
     res.cookie('user_id', userID)
     res.redirect('/urls')
