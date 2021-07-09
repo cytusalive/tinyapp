@@ -6,8 +6,14 @@ const app = express();
 const PORT = 8080;
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://github.com/cytusalive/tinyapp",
+      userID: "cytus"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "cytus"
+  }
 };
 
 const users = { 
@@ -45,53 +51,76 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
 app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
-  res.render("urls_new", templateVars);
+  if (req.cookies["user_id"]) {
+    let templateVars = {
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL]) {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("This shortURL does not exist.")
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { 
-    shortURL: req.params.shortURL, 
-    longURL: urlDatabase[req.params.shortURL],
-    user: users[req.cookies["user_id"]]
-  };
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.shortURL]) {
+    const templateVars = { 
+      shortURL: req.params.shortURL, 
+      longURL: urlDatabase[req.params.shortURL].longURL,
+      user: users[req.cookies["user_id"]]
+    };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).send("This shortURL does not exist.")
+  }
 });
 
 app.get("/register", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
-  res.render("urls_registration", templateVars);
-})
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    let templateVars = {
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_registration", templateVars);
+  }
+});
 
 app.get("/login", (req, res) => {
-  let templateVars = {
-    user: users[req.cookies["user_id"]],
-  };
-  res.render("urls_login", templateVars);
+  if (req.cookies["user_id"]) {
+    res.redirect("/urls");
+  } else {
+    let templateVars = {
+      user: users[req.cookies["user_id"]],
+    };
+    res.render("urls_login", templateVars);
+  }
 })
 
 app.post("/urls", (req, res) => {
-  const shortenedURL = generateRandomString();
-  urlDatabase[shortenedURL] = req.body['longURL'];
-  res.redirect(`/urls/${shortenedURL}`);
+  if (req.cookies["user_id"]) {
+    const shortenedURL = generateRandomString();
+    urlDatabase[shortenedURL] = {
+      longURL: req.body['longURL'],
+      userID: req.cookies["user_id"]
+    }
+    res.redirect(`/urls/${shortenedURL}`);
+  } else {
+    res.status(401).send("You must be logged in to generate a shortURL");
+  }
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -120,10 +149,10 @@ app.post("/login", (req, res) => {
       res.cookie("user_id", user.id);
       res.redirect('/urls');
     } else {
-      res.send(403, "Invalid password.");
+      res.status(403).send("Invalid password.");
     }
   } else {
-    res.send(403, "Invalid email address")
+    res.status(403).send("Invalid email address");
   }
 })
 
@@ -134,11 +163,11 @@ app.post("/logout", (req, res) => {
 
 app.post("/register", (req, res) => {
   if (ifUserExists(req.body.email)) {
-    res.send(400, "This email address is not available.");
+    res.status(400).send("This email address is not available.");
   } else if (!req.body.email) {
-    res.send(400, "Email address cannot be empty");
+    res.status(400).send("Email address cannot be empty");
   } else if (!req.body.password) {
-    res.send(400, "Password is invalid.")
+    res.status(400).send("Password is invalid.")
   } else {
     const userID = generateRandomString();
     users[userID] = {
