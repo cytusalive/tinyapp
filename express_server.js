@@ -2,6 +2,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session');
 const express = require("express");
 const bcrypt = require("bcrypt");
+const { getUserByEmail } = require("./helpers");
 
 const app = express();
 const PORT = 8080;
@@ -176,17 +177,8 @@ app.post("/urls/:id", (req, res) => {
   }
 })
 
-const ifUserExists = function (email) {
-  for (const user in users) {
-    if (users[user]['email'] === email) {
-      return users[user];
-    }
-  }
-  return false;
-}
-
 app.post("/login", (req, res) => {
-  let user = ifUserExists(req.body.email); 
+  let user = getUserByEmail(req.body.email, users); 
   if (user) {
     if (bcrypt.compareSync(req.body.password, user.password)) {  
       req.session["user_id"] = user.id;
@@ -205,7 +197,7 @@ app.post("/logout", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  if (ifUserExists(req.body.email)) {
+  if (getUserByEmail(req.body.email, users)) {
     res.status(400).send("This email address is not available.");
   } else if (!req.body.email) {
     res.status(400).send("Email address cannot be empty");
