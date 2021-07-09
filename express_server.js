@@ -39,15 +39,25 @@ function generateRandomString() {
   return string;
 }
 
+function urlsForUser(id) {
+  const userURLs = {};
+  for (const URL in urlDatabase) {
+    if (urlDatabase[URL].userID === id) {
+      userURLs[URL] = urlDatabase[URL];
+    }
+  }
+  return userURLs;
+}
+
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.get("/urls", (req, res) => {
   const templateVars = {
-     urls: urlDatabase,
+     urls: urlsForUser(req.cookies["user_id"]),
      user: users[req.cookies["user_id"]] 
-    };
+  };  
   res.render("urls_index", templateVars);
 });
 
@@ -80,6 +90,7 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = { 
       shortURL: req.params.shortURL, 
       longURL: urlDatabase[req.params.shortURL].longURL,
+      URLuser: urlDatabase[req.params.shortURL].userID,
       user: users[req.cookies["user_id"]]
     };
     res.render("urls_show", templateVars);
@@ -124,13 +135,39 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  if (req.cookies["user_id"]) {
+    if (req.params.shortURL in urlDatabase) {
+      const userURLs = urlsForUser(req.cookies["user_id"]);
+      if (req.params.shortURL in userURLs) {
+        delete urlDatabase[req.params.shortURL];
+        res.redirect('/urls');  
+      } else {
+        res.status(401).send("You do not own this URL.");
+      }
+    } else {
+      res.status(401).send("This URL does not exist.");
+    }
+  } else {
+    res.status(401).send("You are not logged in.");
+  }
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id] = req.body.newURL;
-  res.redirect('/urls');
+  if (req.cookies["user_id"]) {
+    if (req.params.id in urlDatabase) {
+      const userURLs = urlsForUser(req.cookies["user_id"]);
+      if (req.params.id in userURLs) {
+        urlDatabase[req.params.id].longURL = req.body.newURL;
+        res.redirect('/urls'); 
+      } else {
+        res.status(401).send("You do not own this URL.");
+      }
+    } else {
+      res.status(401).send("This URL does not exist.");
+    }
+  } else {
+    res.status(401).send("You are not logged in.");
+  }
 })
 
 const ifUserExists = function (email) {

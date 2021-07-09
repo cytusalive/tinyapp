@@ -13,6 +13,13 @@
   <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
+        <% if (!user) { %>
+          <div class="alert alert-warning" role="alert">
+            <a href="/login" class="alert-link">Login</a> or <a href="/register" class="alert-link">Register</a> on TinyApp to create and view your own URLs.
+          </div>
+        <% } else if (user.id !== URLuser) { %>
+          <div class="alert alert-warning" role="alert">This URL is not in your collection.</div>
+        <% } %>
         <h5 class="card-title">TinyURL for: <%= longURL %></h5>
         <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
       </div>
